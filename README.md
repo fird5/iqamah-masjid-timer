@@ -4,13 +4,13 @@
 
 ## The problem
 
-I'm the Honorary Chairman of **Masjid Rahimabi Kebun Limau** in Singapore. Running a masjid, you learn quickly that the small things matter — and one of the smallest, most persistent headaches was the **iqamah timer**.
+I'm the Honorary Chairman of **Masjid Rahimabi Kebun Limau** in Singapore. Running a masjid, you learn quickly that the small things matter — and one of the most persistent headaches was the **iqamah timing**.
 
-Jemaah kept telling us the timer was inconsistent. Sometimes the countdown started late. Sometimes the timing didn't match what the imam was doing. And with a number of imams on rotation, communication was genuinely hard to manage — every imam had his own rhythm, and the person running the display had to remember who was leading which prayer and adjust everything by hand.
+The truth is, there was no system in the first place. It was all manual — no timer, no display, nothing. The call to iqamah was left to whoever was leading that day, which meant timing varied from imam to imam. Some would wait a few minutes after adhan, others longer; some followed the clock, others followed their own sense of when the jemaah was ready. The jemaah noticed. They'd tell us the iqamah never felt consistent — sometimes it felt rushed, sometimes it dragged — and with a number of imams on rotation, there was no easy way to manage it. Every imam had his own rhythm, and aligning everyone by word of mouth just didn't stick.
 
-It shouldn't take coordination meetings to show the right time on a TV.
+It shouldn't take coordination meetings to tell worshippers when the prayer starts.
 
-So I built this: a display that runs itself. It pulls the official MUIS timings, and moves through every stage of the prayer — pre-adhan, adhan, iqamah countdown, saf alignment, and a dimmed screen during the prayer itself — automatically, with zero manual switching. No one has to babysit it. No one has to remember which imam is on. The jemaah just see a consistent, correct countdown, every single prayer, every single day.
+So I built this: a display that runs itself. It pulls the official MUIS timings and moves through every stage — pre-adhan, adhan, iqamah countdown, saf alignment, and a dimmed screen during the prayer itself — automatically, with zero manual switching. One consistent countdown for every imam, every prayer, every day. The imams follow the same clock, the jemaah see the same timing, and nobody has to manage anything by hand.
 
 It's been serving our masjid, and I'm sharing it openly so other masjids can use it — free, no strings, no account needed. If it helps one other jemaah pray without checking their watch, it's done its job.
 
