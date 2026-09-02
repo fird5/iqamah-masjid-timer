@@ -1,8 +1,18 @@
 # Masjid Iqamah Timer
 
-A single-file, offline-resilient digital signage display for mosque TVs in Singapore. Shows live prayer timings from MUIS, transitions automatically through pre-adhan, adhan, iqamah countdown, saf-alignment, and a dimmed "prayer in progress" screen, then returns to the idle clock — with zero manual switching required.
+*Built for my masjid, shared with everyone.*
 
-![state machine](https://img.shields.io/badge/state-idle%20%E2%86%92%20pre--adhan%20%E2%86%92%20adhan%20%E2%86%92%20iqamah%20%E2%86%92%20saf%20%E2%86%92%20stealth-8A9A86)
+## The problem
+
+I'm the Honorary Chairman of **Masjid Rahimabi Kebun Limau** in Singapore. Running a masjid, you learn quickly that the small things matter — and one of the smallest, most persistent headaches was the **iqamah timer**.
+
+Jemaah kept telling us the timer was inconsistent. Sometimes the countdown started late. Sometimes the timing didn't match what the imam was doing. And with a number of imams on rotation, communication was genuinely hard to manage — every imam had his own rhythm, and the person running the display had to remember who was leading which prayer and adjust everything by hand.
+
+It shouldn't take coordination meetings to show the right time on a TV.
+
+So I built this: a display that runs itself. It pulls the official MUIS timings, and moves through every stage of the prayer — pre-adhan, adhan, iqamah countdown, saf alignment, and a dimmed screen during the prayer itself — automatically, with zero manual switching. No one has to babysit it. No one has to remember which imam is on. The jemaah just see a consistent, correct countdown, every single prayer, every single day.
+
+It's been serving our masjid, and I'm sharing it openly so other masjids can use it — free, no strings, no account needed. If it helps one other jemaah pray without checking their watch, it's done its job.
 
 ## What it does
 
