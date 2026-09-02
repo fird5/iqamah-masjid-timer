@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://api.aladhan.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paparan Waktu Solat — Masjid Display</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sage:#8A9A86;
+  --sage-pale:#E8EFE9;
+  --cream:#FDFBF7;
+  --gold:#D4A373;
+  --slate:#203027;
+  --slate-soft:rgba(32,48,39,.62);
+  --line:rgba(32,48,39,.10);
+  --shadow:0 1.6vh 5vh -1.6vh rgba(32,48,39,.18);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--cream);
+  color:var(--slate);
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  font-size:1.2vw;
+  -webkit-font-smoothing:antialiased;
+  cursor:none;
+}
+.ar{font-family:'Amiri',serif;direction:rtl}
+#bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(90vh 90vh at 12% -10%, rgba(138,154,134,.20), transparent 62%),
+    radial-gradient(80vh 80vh at 100% 108%, rgba(212,163,115,.18), transparent 60%);
+}
+/* the signature: a slow-drifting eight-point khatam lattice, drawn once in SVG */
+#lattice{position:fixed;inset:-10vh;z-index:0;opacity:.055;pointer-events:none;
+  animation:drift 240s linear infinite}
+@keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-12vh,-12vh,0)}}
+
+.screen{position:relative;z-index:2;height:100%;display:none;flex-direction:column}
+.screen.on{display:flex}
+
+/* ---------- IDLE ---------- */
+#idle{padding:3.2vh 3vw 2.4vh}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:3vw}
+.mosque{font-size:1.5vw;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--sage)}
+.dates{margin-top:.6vh;font-size:1.35vw;color:var(--slate-soft);font-weight:500}
+.hijri{font-size:1.8vw;margin-top:.4vh}
+.clock{font-size:9.4vw;font-weight:800;line-height:.86;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.clock .sec{font-size:3.4vw;font-weight:500;color:var(--sage);vertical-align:top;margin-left:.6vw}
+.syuruk{margin-top:.8vh;font-size:1.25vw;color:var(--slate-soft);text-align:right}
+
+.rule{height:1px;background:var(--line);margin:3vh 0}
+
+.cards{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:1.4vw;align-content:center}
+.card{
+  background:rgba(255,255,255,.62);
+  border:1px solid var(--line);
+  border-radius:2.6vh;
+  padding:3.4vh 1.2vw;
+  text-align:center;
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(8px);
+  transition:transform .6s ease, background .6s ease, border-color .6s ease;
+  position:relative;
+}
+.card .name{font-size:1.55vw;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--slate-soft)}
+.card .name-ar{font-size:2vw;color:var(--sage);margin-top:.4vh}
+.card .t{font-size:4.6vw;font-weight:700;line-height:1.05;margin-top:1.4vh;font-variant-numeric:tabular-nums}
+.card .mer{font-size:1.4vw;font-weight:500;color:var(--slate-soft);margin-left:.35vw}
+.card .iq{font-size:1.05vw;color:var(--slate-soft);margin-top:1vh;letter-spacing:.08em}
+.card.next{
+  background:linear-gradient(160deg,#fff,var(--sage-pale));
+  border-color:rgba(138,154,134,.55);
+  transform:translateY(-1.4vh);
+}
+.card.next .name,.card.next .t{color:var(--slate)}
+.card.next::after{
+  content:'';position:absolute;inset:-.35vh;border-radius:2.9vh;
+  border:.25vh solid var(--sage);opacity:.35;
+  animation:breathe 5.5s ease-in-out infinite;pointer-events:none
+}
+@keyframes breathe{0%,100%{opacity:.18}50%{opacity:.5}}
+.pill{
+  position:absolute;top:-1.7vh;left:50%;transform:translateX(-50%);
+  background:var(--slate);color:var(--cream);
+  padding:.7vh 1.1vw;border-radius:99px;
+  font-size:1.05vw;font-weight:600;white-space:nowrap;letter-spacing:.04em
+}
+.card.past{opacity:.42}
+
+.foot{display:flex;align-items:center;justify-content:space-between;gap:2vw;margin-top:2.6vh;padding-top:2vh;border-top:1px solid var(--line)}
+#reminder{font-size:1.5vw;color:var(--slate-soft);font-weight:500;transition:opacity .9s ease;line-height:1.5}
+#reminder b{color:var(--sage);font-weight:600}
+.status{display:flex;align-items:center;gap:.6vw;font-size:1vw;color:var(--slate-soft);white-space:nowrap}
+.dot{width:.75vw;height:.75vw;border-radius:99px;background:var(--sage)}
+.dot.stale{background:var(--gold)}
+
+/* ---------- FOCUS SCREENS ---------- */
+.focus{align-items:center;justify-content:center;text-align:center;padding:0 8vw}
+.eyebrow{font-size:1.6vw;font-weight:600;letter-spacing:.4em;text-transform:uppercase;color:var(--sage);margin-bottom:2.4vh}
+.head{font-size:6.4vw;font-weight:800;line-height:1.02;letter-spacing:-.03em}
+.head .en{display:block;font-size:2.6vw;font-weight:500;color:var(--slate-soft);margin-top:1.4vh;letter-spacing:0}
+.big{font-size:19vw;font-weight:800;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.05em}
+.sub{font-size:2.2vw;font-weight:500;color:var(--slate-soft);margin-top:3vh;line-height:1.5;max-width:60vw}
+.quiet{font-size:1.7vw;color:var(--slate-soft);margin-top:2vh}
+.arblock{font-family:'Amiri',serif;direction:rtl;font-size:4.2vw;line-height:1.85;margin-top:2vh}
+.hadith{max-width:64vw;margin-top:4vh;padding-top:3vh;border-top:1px solid var(--line)}
+.hadith .txt{font-size:1.9vw;line-height:1.55;font-weight:500}
+.hadith .src{font-size:1.25vw;color:var(--sage);margin-top:1.4vh;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+
+#preadhan{background:linear-gradient(170deg,var(--cream),var(--sage-pale))}
+#adhan{background:linear-gradient(170deg,#fff,#F6EFE4)}
+#iqamah{background:linear-gradient(170deg,var(--cream),#F2F6F2)}
+#saf{background:var(--slate);color:var(--cream)}
+#saf .eyebrow{color:var(--gold)}
+#saf .sub{color:rgba(253,251,247,.72)}
+#saf .glow{position:absolute;inset:0;background:radial-gradient(60vw 60vw at 50% 50%,rgba(212,163,115,.22),transparent 70%);animation:pulse 3.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:.9}}
+
+#stealth{background:#000;color:rgba(232,239,233,.10);align-items:center;justify-content:center}
+#stealthClock{font-size:5.4vw;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:.06em}
+#stealthName{font-size:1.4vw;letter-spacing:.5em;text-transform:uppercase;margin-top:2vh}
+
+/* ---------- ADMIN ---------- */
+#admin{
+  position:fixed;z-index:50;right:2vw;bottom:2vh;width:34vw;max-width:520px;
+  background:#fff;border:1px solid var(--line);border-radius:2.4vh;
+  box-shadow:0 3vh 8vh -2vh rgba(32,48,39,.35);
+  padding:2.4vh 1.8vw;display:none;cursor:auto;font-size:14px
+}
+#admin.on{display:block}
+#admin h3{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:1.4vh}
+#admin label{display:block;font-size:13px;color:var(--slate-soft);margin:1.2vh 0 .5vh}
+#admin input[type=number],#admin input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;font-family:inherit}
+#admin input[type=range]{width:100%;accent-color:var(--sage)}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.grid5 span{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--slate-soft);display:block;margin-bottom:4px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:1.6vh}
+button{font:inherit;font-weight:600;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--sage-pale);color:var(--slate);cursor:pointer}
+button.solid{background:var(--slate);color:var(--cream);border-color:var(--slate)}
+#jump{display:flex;gap:6px;flex-wrap:wrap;margin-top:1vh}
+#jump button{font-size:12px;padding:6px 9px}
+#demoNote{margin-top:1.2vh;font-size:12px;color:var(--gold);font-weight:600;min-height:16px}
+#corner{position:fixed;left:0;top:0;width:8vw;height:8vh;z-index:60}
+#lock{position:fixed;inset:0;z-index:70;background:rgba(32,48,39,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;cursor:auto}
+#lock.on{display:flex}
+#lockBox{background:#fff;border-radius:2.4vh;padding:3vh 2.4vw;width:min(90vw,360px);box-shadow:0 3vh 8vh -2vh rgba(32,48,39,.4);font-size:14px}
+#lockBox h3{font-size:16px;margin-bottom:1.6vh;color:var(--slate)}
+#pinInput{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:22px;letter-spacing:.3em;text-align:center}
+#pinMsg{min-height:18px;font-size:12px;color:#B5533C;margin-top:1vh;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="bg"></div>
+<svg id="lattice" xmlns="http://www.w3.org/2000/svg"><defs>
+<pattern id="kh" width="120" height="120" patternUnits="userSpaceOnUse">
+  <g fill="none" stroke="#203027" stroke-width="1.1">
+    <path d="M60 6 L114 60 L60 114 L6 60 Z"/>
+    <path d="M18 18 L102 18 L102 102 L18 102 Z"/>
+    <path d="M60 -54 L174 60 L60 174 L-54 60 Z" opacity=".5"/>
+  </g>
+</pattern></defs>
+<rect width="100%" height="100%" fill="url(#kh)"/></svg>
+
+<!-- IDLE -->
+<section id="idle" class="screen">
+  <div class="top">
+    <div>
+      <div class="mosque" id="mosqueName">Masjid</div>
+      <div class="dates" id="greg">—</div>
+      <div class="dates hijri ar" id="hijri">—</div>
+    </div>
+    <div style="text-align:right">
+      <div class="clock"><span id="hhmm">--:--</span><span class="sec" id="ss">00</span></div>
+      <div class="syuruk" id="syuruk"></div>
+    </div>
+  </div>
+  <div class="rule"></div>
+  <div class="cards" id="cards"></div>
+  <div class="foot">
+    <div id="reminder"></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">Live</span></div>
+  </div>
+</section>
+
+<!-- PRE-ADHAN -->
+<section id="preadhan" class="screen focus">
+  <div class="eyebrow">Persiapan Solat</div>
+  <div class="head" id="paName">—<span class="en" id="paNameEn">—</span></div>
+  <div class="big" id="paCount">3:00</div>
+  <div class="sub">Sila matikan telefon bimbit anda dan bersiap untuk berwudhu.<br><span style="font-size:1.7vw;opacity:.75">Please silence your mobile phones and prepare for wudhu.</span></div>
+</section>
+
+<!-- ADHAN -->
+<section id="adhan" class="screen focus">
+  <div class="eyebrow">Masuk Waktu Solat</div>
+  <div class="head" id="adName">—<span class="en" id="adNameEn">—</span></div>
+  <div class="arblock">اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ<br>آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ</div>
+  <div class="sub" style="margin-top:2.4vh">Ya Allah, Tuhan seruan yang sempurna dan solat yang didirikan ini, kurniakanlah kepada Nabi Muhammad wasilah dan kelebihan, dan bangkitkanlah baginda pada maqam terpuji yang Engkau janjikan.
+  <br><span style="font-size:1.6vw;opacity:.75">O Allah, Lord of this perfect call and established prayer, grant Muhammad the intercession and favour, and raise him to the praised station You promised him.</span></div>
+</section>
+
+<!-- IQAMAH -->
+<section id="iqamah" class="screen focus">
+  <div class="eyebrow">Masa Solat Sunat &amp; Doa</div>
+  <div class="big" id="iqCount">9:00</div>
+  <div class="quiet">Time for sunnah prayer &amp; supplication — Iqamah for <b id="iqName">—</b></div>
+  <div class="hadith">
+    <div class="txt" id="hadithTxt"></div>
+    <div class="src" id="hadithSrc"></div>
+  </div>
+</section>
+
+<!-- SAF -->
+<section id="saf" class="screen focus">
+  <div class="glow"></div>
+  <div style="position:relative">
+    <div class="eyebrow">Iqamah</div>
+    <div class="head">Rapatkan Saf<span class="en">Straighten and close the rows</span></div>
+    <div class="sub">Bahu ke bahu, tumit ke tumit. <span style="opacity:.7">Shoulder to shoulder, heel to heel.</span></div>
+  </div>
+</section>
+
+<!-- STEALTH -->
+<section id="stealth" class="screen focus">
+  <div id="stealthClock">--:--</div>
+  <div id="stealthName">Solat berjemaah</div>
+</section>
+
+<div id="corner"></div>
+
+<!-- ADMIN -->
+<div id="admin">
+  <h3>Display settings</h3>
+  <label>Mosque name shown on screen</label>
+  <input type="text" id="cfgName" placeholder="Masjid …">
+  <label>Minutes from adhan to iqamah, per prayer (minimum 2)</label>
+  <div class="grid5" id="iqGrid"></div>
+  <label>Minutes before adhan to show the preparation screen</label>
+  <input type="number" id="cfgPre" min="1" max="15">
+  <label>Chime at adhan and iqamah <input type="checkbox" id="cfgChime" style="width:auto;vertical-align:middle"></label>
+  <label>Preview clock — offset from real time (<span id="offLbl">0 min</span>)</label>
+  <input type="range" id="slider" min="-60" max="1440" value="0" step="1">
+  <div id="jump"></div>
+  <div id="demoNote"></div>
+  <div class="btnrow">
+    <button class="solid" id="save">Save settings</button>
+    <button id="reset">Return to real time</button>
+    <button id="refetch">Refresh timings</button>
+    <button id="close">Close</button>
+  </div>
+</div>
+
+<script>
+/* ---------------- config ---------------- */
+const KEY_CFG='masjid.cfg.v1', KEY_DATA='masjid.times.v1', KEY_PIN='masjid.pinhash.v1';
+const DEF={name:'Masjid', pre:3, chime:true, iq:{Subuh:9,Zohor:9,Asar:9,Maghrib:4,Isyak:9}};
+let cfg=Object.assign({},DEF,JSON.parse(localStorage.getItem(KEY_CFG)||'{}'));
+cfg.iq=Object.assign({},DEF.iq,cfg.iq||{});
+const ORDER=[['Subuh','Fajr','الفجر','Fajr'],['Zohor','Dhuhr','الظهر','Dhuhr'],['Asar','Asr','العصر','Asr'],['Maghrib','Maghrib','المغرب','Maghrib'],['Isyak','Isha','العشاء','Isha']];
+const ALIGN_S=90, STEALTH_MIN=15, ADHAN_S=60;
+
+const REMINDERS=[
+ ['Solat adalah tiang agama.','Prayer is the pillar of faith.'],
+ ['Sesungguhnya solat itu mencegah perbuatan keji dan mungkar.','Prayer restrains one from shameful and unjust deeds. — Al-Ankabut 29:45'],
+ ['Amalan yang mula-mula dihisab pada hari kiamat ialah solat.','The first deed a servant is called to account for on the Day of Judgement is the prayer. — Tirmidhi'],
+ ['Jagalah solat, terutama solat pertengahan.','Guard strictly the prayers, especially the middle prayer. — Al-Baqarah 2:238'],
+ ['Bersihkan hati sebelum masuk ke rumah Allah.','Come to the house of Allah with a quiet heart.'],
+ ['Sila tutup telefon bimbit anda semasa berada di dalam masjid.','Kindly silence your phone inside the mosque.']
+];
+const HADITHS=[
+ ['Solat berjemaah lebih afdal daripada solat bersendirian sebanyak dua puluh tujuh darjat.','Sahih al-Bukhari 645'],
+ ['Sesiapa yang berwudhu dengan sempurna lalu berjalan ke masjid, setiap langkahnya mengangkat satu darjat dan menghapus satu dosa.','Sahih Muslim 666'],
+ ['Berilah khabar gembira kepada mereka yang berjalan ke masjid dalam kegelapan dengan cahaya yang sempurna pada hari kiamat.','Sunan Abu Dawud 561'],
+ ['Malaikat mendoakan seseorang selagi dia duduk di tempat solatnya: Ya Allah, ampunilah dia, rahmatilah dia.','Sahih al-Bukhari 445'],
+ ['Antara seorang hamba dengan kekufuran adalah meninggalkan solat.','Sahih Muslim 82']
+];
+
+/* ---------------- time helpers ---------------- */
+let demoOffset=0; // seconds
+function now(){return new Date(Date.now()+demoOffset*1000);}
+const p2=n=>String(n).padStart(2,'0');
+function sgParts(d){ // render any Date in Asia/Singapore
+  const f=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const o={}; f.formatToParts(d).forEach(p=>o[p.type]=p.value);
+  return {y:+o.year,m:+o.month,d:+o.day,H:+(o.hour==='24'?'00':o.hour),M:+o.minute,S:+o.second};
+}
+function secsOfDay(d){const t=sgParts(d);return t.H*3600+t.M*60+t.S;}
+function hm(str){const[a,b]=str.split(':').map(Number);return a*3600+b*60;}
+function fmt12(sec){let h=Math.floor(sec/3600),m=Math.floor(sec/60)%60;const mer=h>=12?'PM':'AM';h=h%12||12;return[h+':'+p2(m),mer];}
+function mmss(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+p2(s%60);}
+
+/* ---------------- data ---------------- */
+let TIMES=null, HIJRI='', GREG='', dataDate='', stale=false;
+function todayKeySG(){const t=sgParts(now());return `${p2(t.d)}-${p2(t.m)}-${t.y}`;}
+
+async function loadTimes(force){
+  const key=todayKeySG();
+  const cached=JSON.parse(localStorage.getItem(KEY_DATA)||'null');
+  if(!force && cached && cached.key===key){apply(cached);stale=false;render();return;}
+  if(cached){apply(cached);stale=cached.key!==key;render();}
+  try{
+    const r=await fetch(`https://api.aladhan.com/v1/timingsByCity/${key}?city=Singapore&country=Singapore&method=11`);
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(!j||j.code!==200||!j.data||!j.data.timings||!j.data.date||!j.data.date.hijri) throw new Error('unexpected API shape');
+    const d=j.data;
+    const need=['Fajr','Dhuhr','Asr','Maghrib','Isha','Sunrise'];
+    for(const k of need){ if(typeof d.timings[k]!=='string'||!/^\d{2}:\d{2}/.test(d.timings[k])) throw new Error('bad timing field'); }
+    const pack={key,timings:d.timings,hijri:`${d.date.hijri.day} ${d.date.hijri.month.ar} ${d.date.hijri.year} هـ`,
+                hijriEn:`${d.date.hijri.day} ${d.date.hijri.month.en} ${d.date.hijri.year} AH`};
+    localStorage.setItem(KEY_DATA,JSON.stringify(pack));
+    apply(pack);stale=false;
+  }catch(e){ stale=true; }
+  render();
+}
+function apply(pack){
+  TIMES={}; ORDER.forEach(([my,api])=>TIMES[my]=hm(pack.timings[api].slice(0,5)));
+  TIMES.Syuruk=hm(pack.timings.Sunrise.slice(0,5));
+  HIJRI=pack.hijri; HIJRI_EN=pack.hijriEn||'';
+}
+let HIJRI_EN='';
+
+/* ---------------- state machine ---------------- */
+// windows per prayer: pre → adhan → iqamah → saf → stealth
+function currentState(){
+  if(!TIMES)return{mode:'IDLE'};
+  const s=secsOfDay(now());
+  for(const [my] of ORDER){
+    const T=TIMES[my], iqS=cfg.iq[my]*60;
+    const preS=T-cfg.pre*60;
+    // iqamah is called at T + gap; the adhan screen eats the first minute of that gap
+    const adEnd=T+ADHAN_S, iqEnd=Math.max(adEnd,T+iqS), safEnd=iqEnd+ALIGN_S, stEnd=safEnd+STEALTH_MIN*60;
+    if(s>=preS&&s<T)   return{mode:'PRE',my,left:T-s};
+    if(s>=T&&s<adEnd)  return{mode:'ADHAN',my,left:adEnd-s};
+    if(s>=adEnd&&s<iqEnd)return{mode:'IQAMAH',my,left:iqEnd-s};
+    if(s>=iqEnd&&s<safEnd)return{mode:'SAF',my,left:safEnd-s};
+    if(s>=safEnd&&s<stEnd)return{mode:'STEALTH',my,left:stEnd-s};
+  }
+  return{mode:'IDLE'};
+}
+function nextPrayer(){
+  const s=secsOfDay(now());
+  for(const [my,,ar,en] of ORDER) if(TIMES[my]>s) return{my,ar,en,in:TIMES[my]-s};
+  return{my:'Subuh',ar:'الفجر',en:'Fajr',in:86400-s+TIMES.Subuh};
+}
+
+/* ---------------- render ---------------- */
+const $=id=>document.getElementById(id);
+const screens=['idle','preadhan','adhan','iqamah','saf','stealth'];
+let shown='', hadithIdx=0, remIdx=0;
+
+function show(id){ if(shown===id)return; shown=id;
+  screens.forEach(s=>$(s).classList.toggle('on',s===id));
+  document.body.style.background = id==='stealth' ? '#000' : 'var(--cream)';
+  $('bg').style.opacity=$('lattice').style.opacity= id==='stealth'?0:'';
+}
+
+function buildCards(){
+  $('cards').innerHTML=ORDER.map(([my,,ar])=>`<div class="card" data-p="${my}">
+    <div class="name">${my}</div><div class="name-ar ar">${ar}</div>
+    <div class="t"><span class="v">--:--</span><span class="mer"></span></div>
+    <div class="iq"></div></div>`).join('');
+}
+
+function render(){
+  const t=sgParts(now());
+  $('hhmm').textContent=p2(t.H)+':'+p2(t.M); $('ss').textContent=p2(t.S);
+  $('stealthClock').textContent=p2(t.H)+':'+p2(t.M);
+  $('mosqueName').textContent=cfg.name;
+  $('greg').textContent=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now());
+  $('hijri').textContent=HIJRI||'—';
+  $('dot').classList.toggle('stale',stale);
+  $('statusTxt').textContent=stale?'Showing saved timetable':'Live • MUIS';
+
+  if(!TIMES){show('idle');return;}
+  $('syuruk').textContent='Syuruk '+fmt12(TIMES.Syuruk).join(' ');
+
+  const st=currentState(), s=secsOfDay(now()), nx=nextPrayer();
+
+  // idle cards
+  document.querySelectorAll('.card').forEach(c=>{
+    const my=c.dataset.p, [v,mer]=fmt12(TIMES[my]);
+    c.querySelector('.v').textContent=v; c.querySelector('.mer').textContent=mer;
+    c.querySelector('.iq').textContent='Iqamah '+fmt12(TIMES[my]+cfg.iq[my]*60).join(' ');
+    c.classList.toggle('past',TIMES[my]<s);
+    const isNext=my===nx.my; c.classList.toggle('next',isNext);
+    let pill=c.querySelector('.pill');
+    if(isNext){ if(!pill){pill=document.createElement('div');pill.className='pill';c.appendChild(pill);} 
+      const h=Math.floor(nx.in/3600),m=Math.floor(nx.in/60)%60;
+      pill.textContent= h? `in ${h} hr ${m} min` : `in ${m} min`;
+    } else if(pill) pill.remove();
+  });
+
+  if(st.mode==='IDLE'){show('idle');return;}
+  const en=ORDER.find(o=>o[0]===st.my)[3];
+  if(st.mode==='PRE'){ $('paName').firstChild.textContent=st.my; $('paNameEn').textContent='Prepare for '+en;
+    $('paCount').textContent=mmss(st.left); show('preadhan'); }
+  else if(st.mode==='ADHAN'){ $('adName').firstChild.textContent=st.my; $('adNameEn').textContent='Time for '+en+' — Adhan';
+    show('adhan'); }
+  else if(st.mode==='IQAMAH'){ $('iqCount').textContent=mmss(st.left); $('iqName').textContent=st.my; show('iqamah'); }
+  else if(st.mode==='SAF'){ show('saf'); }
+  else if(st.mode==='STEALTH'){ $('stealthName').textContent='Solat '+st.my; show('stealth'); }
+}
+
+/* rotating footer text + hadith, changed only between prayers */
+setInterval(()=>{ const r=$('reminder'); r.style.opacity=0;
+  setTimeout(()=>{remIdx=(remIdx+1)%REMINDERS.length;
+    r.innerHTML=`<b>${REMINDERS[remIdx][0]}</b><br>${REMINDERS[remIdx][1]}`; r.style.opacity=1;},900);
+},18000);
+function setHadith(){ hadithIdx=(hadithIdx+1)%HADITHS.length;
+  $('hadithTxt').textContent=HADITHS[hadithIdx][0]; $('hadithSrc').textContent=HADITHS[hadithIdx][1]; }
+
+/* ---------------- chime (synthesised, no audio file) ---------------- */
+let actx=null;
+function chime(){
+  if(!cfg.chime)return;
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    [0,.36,.72].forEach((d,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime+d;
+      o.type='sine'; o.frequency.value=[523.25,659.25,783.99][i];
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.16,t+.05);
+      g.gain.exponentialRampToValueAtTime(.0001,t+1.4);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+1.5);
+    });
+  }catch(e){}
+}
+document.addEventListener('click',()=>{try{(actx=actx||new AudioContext()).resume()}catch(e){}},{once:true});
+
+/* ---------------- tick ---------------- */
+let lastMode='';
+function tick(){
+  const before=currentState().mode;
+  render();
+  if(before!==lastMode){
+    if(before==='ADHAN'||before==='SAF') chime();
+    if(before==='IQAMAH') setHadith();
+    lastMode=before;
+  }
+  const t=sgParts(now());
+  if(t.H===0&&t.M===1&&t.S<2) loadTimes(true);
+}
+setInterval(tick,1000);
+
+/* ---------------- wake lock ---------------- */
+let wl=null;
+async function wake(){ try{ wl=await navigator.wakeLock.request('screen'); wl.addEventListener('release',()=>{wl=null}); }catch(e){} }
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!wl)wake();});
+
+/* ---------------- admin ---------------- */
+function buildAdmin(){
+  $('iqGrid').innerHTML=ORDER.map(([my])=>`<div><span>${my}</span><input type="number" min="2" max="30" data-iq="${my}" value="${cfg.iq[my]}"></div>`).join('');
+  $('cfgName').value=cfg.name; $('cfgPre').value=cfg.pre; $('cfgChime').checked=cfg.chime;
+  $('jump').innerHTML=ORDER.map(([my])=>`<button data-jump="${my}">${my} preview</button>`).join('')+
+    `<button data-jump="__off">Clear</button>`;
+}
+/* ---------------- admin toggle (no PIN) ---------------- */
+let adminIdleTimer=null;
+function openAdmin(){ $('admin').classList.add('on'); document.body.style.cursor='auto'; resetAdminIdle(); }
+function closeAdmin(){ $('admin').classList.remove('on'); document.body.style.cursor='none'; clearTimeout(adminIdleTimer); }
+function resetAdminIdle(){ clearTimeout(adminIdleTimer); adminIdleTimer=setTimeout(closeAdmin,120000); }
+$('admin').addEventListener('input',resetAdminIdle); $('admin').addEventListener('click',resetAdminIdle);
+function toggleAdmin(){ $('admin').classList.contains('on') ? closeAdmin() : openAdmin(); }
+addEventListener('keydown',e=>{ if(e.code==='KeyD')toggleAdmin(); if(e.code==='Escape')closeAdmin(); });
+$('corner').addEventListener('click',toggleAdmin);
+$('close').onclick=closeAdmin;
+
+/* ---------------- kiosk hardening ---------------- */
+document.addEventListener('contextmenu',e=>{ if(!$('admin').classList.contains('on')) e.preventDefault(); });
+addEventListener('keydown',e=>{
+  const blocked = e.key==='F12' || (e.ctrlKey&&e.shiftKey&&['I','J','C'].includes(e.key)) || (e.ctrlKey&&e.key==='u');
+  if(blocked && !$('admin').classList.contains('on')) e.preventDefault();
+});
+$('slider').oninput=e=>{ demoOffset=+e.target.value*60; $('offLbl').textContent=(+e.target.value)+' min';
+  $('demoNote').textContent=demoOffset?'Preview clock active — display is not showing real time.':''; render(); };
+$('reset').onclick=()=>{ demoOffset=0;$('slider').value=0;$('offLbl').textContent='0 min';$('demoNote').textContent='';render(); };
+$('refetch').onclick=()=>loadTimes(true);
+$('save').onclick=()=>{
+  cfg.name=$('cfgName').value.trim()||'Masjid'; cfg.pre=Math.max(1,+$('cfgPre').value||3); cfg.chime=$('cfgChime').checked;
+  document.querySelectorAll('[data-iq]').forEach(i=>{const v=Math.max(2,+i.value||2);cfg.iq[i.dataset.iq]=v;i.value=v;});
+  localStorage.setItem(KEY_CFG,JSON.stringify(cfg)); render(); $('demoNote').textContent='Settings saved.';
+  setTimeout(()=>{if($('demoNote').textContent==='Settings saved.')$('demoNote').textContent=''},2500);
+};
+$('jump').onclick=e=>{ const p=e.target.dataset.jump; if(!p)return;
+  if(p==='__off'){$('reset').onclick();return;}
+  const target=TIMES[p]-cfg.pre*60+5, mins=Math.round((target-secsOfDay(new Date()))/60);
+  $('slider').value=Math.max(-60,Math.min(1440,mins)); $('slider').oninput({target:$('slider')});
+};
+
+/* ---------------- boot ---------------- */
+buildCards(); buildAdmin(); setHadith();
+$('reminder').innerHTML=`<b>${REMINDERS[0][0]}</b><br>${REMINDERS[0][1]}`;
+show('idle'); wake(); loadTimes(false); tick();
+</script>
+</body>
+</html>
