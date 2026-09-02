@@ -6,7 +6,7 @@
 
 I'm the Honorary Chairman of **Masjid Rahimabi Kebun Limau** in Singapore. Running a masjid, you learn quickly that the small things matter and one of the most persistent headaches was the **iqamah timing**.
 
-It was all manual originally as it has been for years with no timer, no display. 
+It was all manual originally as it has been for years and it worked well
 
 The call to iqamah was left to the imam leading prayer for that solat, which meant timing varied slightly from imam to imam. 
 
